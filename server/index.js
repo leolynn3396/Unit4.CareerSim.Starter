@@ -3,6 +3,23 @@ const express = require('express')
 const client = new pg.Client(process.env.DATABASE_URL || 'postgres://localhost/the_acme_notes_db')
 const app = express()
 
+//app routes
+app.use(express.json());
+app.use(require('morgan')('dev'));
+app.post('/api/notes', async (req, res, next) => {});
+app.get('/api/notes', async (req, res, next) => {
+    try{
+        const SQL = `SELECT * from notes ORDER BY created_at DESC;`
+        const response = await client.query(SQL)
+        res.send(response.rows)
+
+    }catch(error){
+        next(error)
+    }
+});
+app.put('/api/notes/:id', async (req, res, next) => {});
+app.delete('/api/notes/:id', async (req, res, next) => {});
+
 //Create an async function
 const init = async () => {
     //Inside the code body of the function, first awat client.connect()
@@ -23,6 +40,9 @@ const init = async () => {
     INSERT INTO notes(txt, ranking) VALUES('create routes', 2);`;
     await client.query(SQL);
     console.log('data seeded');
+
+    const port = process.env.PORT || 3000
+    app.listen(port, () => console.log(`listening on port ${port}`))
   };
   
   init();
