@@ -1,28 +1,26 @@
-const pg = require('pg');
-const express = require('express');
-const client = new pg.Client(process.env.DATABASE_URL || 'postgres://localhost/acme_notes_db')
-const app = express();
-app.use(express.json());
-
-//deployement only
-const path = require("path");
-app.get("/", (req, res) => {
-    res.send("hello world")
-})
-app.listen(3000)
-
-
-app.get("api/auth/me", async (req, res, next)=>{
-    try{
-
-    }catch(error){
-    next(error);
-}});
-app.use(express.json());
-app.use(require('morgan')('dev'));
-
-//isLoggedIn from block36
-const isLoggedIn = async(req, res, next)=> {
+const {
+    client,
+    createTables,
+    createUser,
+    createProduct,
+    createFavorite,
+    fetchUsers,
+    fetchProducts,
+    fetchFavorites,
+    destroyFavorite,
+    authenticate,
+    findUserWithToken
+  } = require('./db');
+  const express = require('express');
+  const app = express();
+  app.use(express.json());
+  
+  //for deployment only
+  const path = require('path');
+  app.get('/', (req, res)=> res.sendFile(path.join(__dirname, '../client/dist/index.html')));
+  app.use('/assets', express.static(path.join(__dirname, '../client/dist/assets'))); 
+  
+  const isLoggedIn = async(req, res, next)=> {
     try {
       req.user = await findUserWithToken(req.headers.authorization);
       next();
@@ -31,112 +29,111 @@ const isLoggedIn = async(req, res, next)=> {
       next(ex);
     }
   };
-
-
-// //app routes// 
-app.get('/api/users', async (req, res, next) => {
-    try {
-        res.send("users")
-    } catch (error) {
-        next(error);
-    }
-});
-app.get('/api/products', async (req, res, next) => {
-    try {
-        res.send("products")
-    } catch (error) {
-        next(ex);
-    }
-});
-app.listen(3000)
-
-// //POST
-app.post('/api/users', async (req, res) => { });
-app.post('/api/products', async (req, res) => { });
-
-app.post('/api/login', async (req, res) => {
   
+  app.post('/api/auth/login', async(req, res, next)=> {
     try {
-        const {username, password} = req.body;
-        const SQL = `SELECT * FROM users WHERE username = $1`;
-        const userResponse = await client.query(SQL, [username]);
-        console.log(userResponse.rows[0]);
-
-        const user = result.rows[0];
-        if (!user || !(await bcrypt.compare(password,user.password))) {
-            return res.status(401).json({message: "Invalid username or password"});
-        }
-        const token = JsonWebTokenError.sign({user}, "secret");
-        res.json({message: "Login successful", token});
-
-    }catch(error) {
-        res.status(500).json({message: "Internal server error"});
+      res.send(await authenticate(req.body));
     }
-})
-//PUT
-app.put('/api/users', async (req, res) => { });
-
-app.put('/api/products', async (req, res) => { });
-//DELETE
-app.delete('/api/users', async (req, res) => { });
-app.delete('/api/products', async (req, res) => { });
-
-
-
-// ///============///
-
-app.get('/api/users/cart_products', async (req, res, next) => {
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.post('/api/auth/register', async(req, res, next)=> {
     try {
-        res.send(response.rows)
-
-    } catch (error) {
-        next(error)
+      res.send(await createUser(req.body));
     }
-
-});
-
-
-// //=========================================//
-
-// app.post('/api/notes', async (req, res, next) => { });
-// app.get('/api/notes', async (req, res, next) => {
-//     try {
-//         const SQL = `SELECT * from notes ORDER BY created_at DESC;`
-//         const response = await client.query(SQL)
-//         res.send(response.rows)
-
-//     } catch (error) {
-//         next(error)
-//     }
-// });
-// app.put('/api/notes/:id', async (req, res, next) => { });
-// app.delete('/api/notes/:id', async (req, res, next) => { });
-
-// //Create an async function
-const init = async () => {
-    //Inside the code body of the function, first awat client.connect()
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.get('/api/auth/me', isLoggedIn, async(req, res, next)=> {
+    try {
+      res.send(await findUserWithToken(req.headers.authorization));
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.get('/api/users', async(req, res, next)=> {
+    try {
+      res.send(await fetchUsers());
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.get('/api/users/:id/favorites', async(req, res, next)=> {
+    try {
+      res.send(await fetchFavorites(req.params.id));
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.post('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
+    try {
+      res.status(201).send(await createFavorite({ user_id: req.params.id, product_id: req.body.product_id}));
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.delete('/api/users/:user_id/favorites/:id', isLoggedIn, async(req, res, next)=> {
+    try {
+      await destroyFavorite({user_id: req.params.user_id, id: req.params.id });
+      res.sendStatus(204);
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.get('/api/products', async(req, res, next)=> {
+    try {
+      res.send(await fetchProducts());
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
+  
+  app.use((err, req, res, next)=> {
+    console.log(err);
+    res.status(err.status || 500).send({ error: err.message ? err.message : err });
+  });
+  
+  const init = async()=> {
+    const port = process.env.PORT || 3000;
     await client.connect();
     console.log('connected to database');
-    let SQL = `
-    DROP TABLE IF EXISTS categories;
-    CREATE TABLE categories(
-        id SERIAL PRIMARY KEY,
-        name VARchAr(255) NOT NULL);
-    created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    ranking INTEGER DEFAULT 3 NOT NULL,
-    txt VARCHAR(255) NOT NULL
-    );`;
-    await client.query(SQL);
+  
+    await createTables();
     console.log('tables created');
-    SQL = `INSERT INTO notes(txt, ranking) VALUES('learn express', 5);
-    INSERT INTO notes(txt, ranking) VALUES('write SQL queries', 4);
-    INSERT INTO notes(txt, ranking) VALUES('create routes', 2);`;
-    await client.query(SQL);
-    console.log('data seeded');
-
-    const port = process.env.PORT || 3000
-    app.listen(port, () => console.log(`listening on port ${port}`))
-};
-
-init();
+  
+    const [moe, lucy, ethyl, curly, foo, bar, bazz, quq, fip] = await Promise.all([
+      createUser({ username: 'moe', password: 'm_pw'}),
+      createUser({ username: 'lucy', password: 'l_pw'}),
+      createUser({ username: 'ethyl', password: 'e_pw'}),
+      createUser({ username: 'curly', password: 'c_pw'}),
+      createProduct({ name: 'foo' }),
+      createProduct({ name: 'bar' }),
+      createProduct({ name: 'bazz' }),
+      createProduct({ name: 'quq' }),
+      createProduct({ name: 'fip' })
+    ]);
+  
+    console.log(await fetchUsers());
+    console.log(await fetchProducts());
+  
+    console.log(await fetchFavorites(moe.id));
+    const favorite = await createFavorite({ user_id: moe.id, product_id: foo.id });
+    app.listen(port, ()=> console.log(`listening on port ${port}`));
+  };
+  
+  init();
