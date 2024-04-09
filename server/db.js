@@ -1,5 +1,5 @@
 const pg = require('pg');
-const client = new pg.Client(process.env.DATABASE_URL || 'postgres://localhost/acme_auth_store_db');
+const client = new pg.Client(process.env.DATABASE_URL || 'postgres://localhost/ling_unit4_career_sim');
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 
