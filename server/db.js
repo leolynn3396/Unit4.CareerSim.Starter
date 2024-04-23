@@ -31,7 +31,6 @@ const createTables = async () => {
     CREATE TABLE carts(
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) NOT NULL,
-        CONSTRAINT unique_user_id UNIQUE (user_id)
     );
 
     CREATE TABLE carts_products(
@@ -62,8 +61,11 @@ const createProduct = async ({ name }) => {
 }
 
 const createCart = async ({ user_id, }) => {
-
-
+  const SQL = `
+  INSERT INTO carts(id, user_id ) VALUES($1, $2) RETURNING *
+  `;
+  const response = await client.query(SQL, [uuid.v4(), name]);
+  return response.rows[0];
 }
 
 const selectOrder = async () => { }
@@ -103,12 +105,12 @@ const createCartProducts = async (cart_id, product_id, quantity) => {
 
 const authenticate = async({ username, password })=> {
     const SQL = `
-      SELECT id, password, username 
+      SELECT id, password 
       FROM users 
-      WHERE username=$1;
+      WHERE username = $1
     `;
-    const response = await client.query(SQL, [username]);
-    if((!response.rows.length || await bcrypt.compare(password, response.rows[0].password))===false){
+    const response = await client.query(SQL, [ username ]);
+    if(!response.rows.length || (await bcrypt.compare(password, response.rows[0].password))=== false){
       const error = Error('not authorized');
       error.status = 401;
       throw error;
@@ -168,6 +170,7 @@ module.exports = {
     fetchCart,
     createCart,
     fetchProductById,
+    fetchCartProducts,
     deleteCart,
     authenticate,
     findUserWithToken,

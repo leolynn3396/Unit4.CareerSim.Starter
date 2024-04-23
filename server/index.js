@@ -6,6 +6,7 @@ const {
     createFavorite,
     fetchUsers,
     fetchProducts,
+    fetchCartProducts,
     fetchFavorites,
     destroyFavorite,
     authenticate,
