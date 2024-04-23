@@ -3,12 +3,12 @@ const {
     createTables,
     createUser,
     createProduct,
-    // createFavorite,
+    createFavorite,
     fetchUsers,
     fetchProducts,
     fetchCartProducts,
-    // fetchFavorites,
-    // destroyFavorite,
+    fetchFavorites,
+    destroyFavorite,
     authenticate,
     findUserWithToken
   } = require('./db');

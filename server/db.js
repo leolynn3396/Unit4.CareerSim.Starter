@@ -10,6 +10,7 @@ app.use(require('morgan')('dev'));
 
 const createTables = async () => {
     const SQL = `
+    DROP TABLE IF EXISTS favorites;
     DROP TABLE IF EXISTS users;
     DROP TABLE IF EXISTS products;
     DROP TABLE IF EXISTS carts;
@@ -27,6 +28,13 @@ const createTables = async () => {
         price INT,
         category VARCHAR(20),
         description TEXT
+    );
+
+    CREATE TABLE favorites(
+      id UUID PRIMARY KEY,
+      user_id UUID REFERENCES users(id) NOT NULL,
+      product_id UUID REFERENCES products(id) NOT NULL,
+      CONSTRAINT unique_user_id_and_product_id UNIQUE (user_id, product_id)
     );
 
     CREATE TABLE carts(
@@ -161,6 +169,29 @@ const authenticate = async({ username, password })=> {
     const response = await client.query(SQL);
     return response.rows;
   };
+  const createFavorite = async ({ user_id, product_id }) => {
+    const SQL = `
+      INSERT INTO favorites(id, user_id, product_id) VALUES($1, $2, $3) RETURNING *
+    `;
+    const response = await client.query(SQL, [uuid.v4(), user_id, product_id]);
+    return response.rows[0];
+  };
+  
+  const destroyFavorite = async ({ user_id, id }) => {
+    const SQL = `
+      DELETE FROM favorites WHERE user_id=$1 AND id=$2
+    `;
+    await client.query(SQL, [user_id, id]);
+  };
+  const fetchFavorites = async (user_id) => {
+    const SQL = `
+      SELECT * FROM favorites where user_id = $1
+    `;
+    const response = await client.query(SQL, [user_id]);
+    return response.rows;
+  };
+
+
   
 module.exports = {
     client,
@@ -173,6 +204,9 @@ module.exports = {
     createCart,
     fetchProductById,
     fetchCartProducts,
+    createFavorite,
+    destroyFavorite,
+    fetchFavorites,
     deleteCart,
     authenticate,
     findUserWithToken,
