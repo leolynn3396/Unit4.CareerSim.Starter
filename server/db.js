@@ -32,6 +32,7 @@ const createTables = async () => {
     CREATE TABLE carts(
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) NOT NULL,
+        status VARCHAR(20) UNIQUE NOT NULL,
     );
 
     CREATE TABLE carts_products(
@@ -63,9 +64,9 @@ const createProduct = async ({ name }) => {
 
 const createCart = async ({ user_id, }) => {
   const SQL = `
-  INSERT INTO carts(id, user_id ) VALUES($1, $2) RETURNING *
+  INSERT INTO carts(id, user_id, status) VALUES($1, $2, $3) RETURNING *
   `;
-  const response = await client.query(SQL, [uuid.v4(), name]);
+  const response = await client.query(SQL, [uuid.v4(), user_id]);
   return response.rows[0];
 }
 
