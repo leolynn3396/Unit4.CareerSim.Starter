@@ -67,33 +67,33 @@ const {
     }
   });
   
-  // app.get('/api/users/:id/favorites', async(req, res, next)=> {
-  //   try {
-  //     res.send(await fetchFavorites(req.params.id));
-  //   }
-  //   catch(ex){
-  //     next(ex);
-  //   }
-  // });
+  app.get('/api/users/:id/favorites', async(req, res, next)=> {
+    try {
+      res.send(await fetchFavorites(req.params.id));
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
   
-  // app.post('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
-  //   try {
-  //     res.status(201).send(await createFavorite({ user_id: req.params.id, product_id: req.body.product_id}));
-  //   }
-  //   catch(ex){
-  //     next(ex);
-  //   }
-  // });
+  app.post('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
+    try {
+      res.status(201).send(await createFavorite({ user_id: req.params.id, product_id: req.body.product_id}));
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
   
-  // app.delete('/api/users/:user_id/favorites/:id', isLoggedIn, async(req, res, next)=> {
-  //   try {
-  //     await destroyFavorite({user_id: req.params.user_id, id: req.params.id });
-  //     res.sendStatus(204);
-  //   }
-  //   catch(ex){
-  //     next(ex);
-  //   }
-  // });
+  app.delete('/api/users/:user_id/favorites/:id', isLoggedIn, async(req, res, next)=> {
+    try {
+      await destroyFavorite({user_id: req.params.user_id, id: req.params.id });
+      res.sendStatus(204);
+    }
+    catch(ex){
+      next(ex);
+    }
+  });
   
   app.get('/api/products', async(req, res, next)=> {
     try {
