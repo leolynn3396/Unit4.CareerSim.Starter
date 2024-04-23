@@ -19,8 +19,9 @@ const createTables = async () => {
     CREATE TABLE users(
         id UUID DEFAULT gen_random_uuid(),
         username VARCHAR(20) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL
-    );
+        password VARCHAR(255) NOT NULL, 
+        FOREIGN KEY(cart_id) REFERENCES carts(id)
+        );
 
     CREATE TABLE products(
         id UUID DEFAULT gen_random_uuid(),
@@ -39,7 +40,6 @@ const createTables = async () => {
 
     CREATE TABLE carts(
         id UUID PRIMARY KEY,
-        user_id UUID REFERENCES users(id) NOT NULL,
         status VARCHAR(20) UNIQUE NOT NULL,
     );
 
@@ -56,7 +56,7 @@ const createTables = async () => {
 
 const createUser = async({ username, password })=> {
     const SQL = `
-      INSERT INTO users(id, username, password) VALUES($1, $2, $3) RETURNING *
+      INSERT INTO users(id, username, password, ) VALUES($1, $2, $3) RETURNING *
     `;
     const response = await client.query(SQL, [uuid.v4(), username, await bcrypt.hash(password, 5)]);
     return response.rows[0];
@@ -77,10 +77,6 @@ const createCart = async ({ user_id, }) => {
   const response = await client.query(SQL, [uuid.v4(), user_id]);
   return response.rows[0];
 }
-
-const selectOrder = async () => { }
-
-const selectProduct = async () => { }
 
 const fetchCartProducts = async (user_id) => {
     const SQL = `
@@ -206,7 +202,7 @@ module.exports = {
     fetchCartProducts,
     createFavorite,
     destroyFavorite,
-    fetchFavorites,
+    fetchFavorites
     deleteCart,
     authenticate,
     findUserWithToken,
