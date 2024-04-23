@@ -25,7 +25,9 @@ const createTables = async () => {
     CREATE TABLE products(
         id UUID DEFAULT gen_random_uuid(),
         name VARCHAR(20),
-        quantity INT DEFAULT 10
+        price INT,
+        category VARCHAR(20),
+        description TEXT
     );
 
     CREATE TABLE carts(
@@ -54,7 +56,7 @@ const createUser = async({ username, password })=> {
 
 const createProduct = async ({ name }) => {
     const SQL = `
-    INSERT INTO products(id, name) VALUES($1, $2) RETURNING *
+    INSERT INTO products(id, name, price, category, description) VALUES($1, $2, $3, $4, $5) RETURNING *
     `;
     const response = await client.query(SQL, [uuid.v4(), name]);
     return response.rows[0];
